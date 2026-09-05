@@ -23,7 +23,7 @@ Syndrome extraction:
 """
 import math
 import random
-from typing import List, Tuple, Dict, Optional, Set
+from typing import List, Tuple, Dict, Optional, Set, Any
 
 
 # ─── Surface Code Lattice ───────────────────────────────────────────────────
@@ -301,7 +301,7 @@ def error_correction_cycle(distance: int, error_rate: float,
                             seed: Optional[int] = None) -> dict:
     """
     Run a single error correction cycle.
-    
+
     1. Create surface code lattice
     2. Apply depolarizing noise
     3. Extract syndromes
@@ -309,6 +309,13 @@ def error_correction_cycle(distance: int, error_rate: float,
     5. Apply correction
     6. Check for logical error
     """
+    if not isinstance(distance, int) or distance < 3 or distance % 2 == 0:
+        raise ValueError("Distance must be an odd integer >= 3")
+    if not isinstance(error_rate, (int, float)) or error_rate < 0 or error_rate > 1:
+        raise ValueError("Error rate must be a float between 0 and 1")
+    if seed is not None and not isinstance(seed, int):
+        raise TypeError("Seed must be an integer or None")
+
     if seed is not None:
         random.seed(seed)
     
@@ -371,6 +378,12 @@ def calculate_logical_error_rate(distance: int, error_rate: float,
     """
     Calculate logical error rate by running many error correction cycles.
     """
+    if not isinstance(distance, int) or distance < 3 or distance % 2 == 0:
+        raise ValueError("Distance must be an odd integer >= 3")
+    if not isinstance(error_rate, (int, float)) or error_rate < 0 or error_rate > 1:
+        raise ValueError("Error rate must be a float between 0 and 1")
+    if not isinstance(n_trials, int) or n_trials < 1:
+        raise ValueError("Number of trials must be a positive integer")
     random.seed(seed)
     
     logical_errors = 0
@@ -404,10 +417,14 @@ def threshold_estimation(distance: int, n_trials: int = 500,
                            seed: int = 42) -> dict:
     """
     Estimate the threshold error rate for a given code distance.
-    
+
     The threshold is the physical error rate below which the logical
     error rate is suppressed.
     """
+    if not isinstance(distance, int) or distance < 3 or distance % 2 == 0:
+        raise ValueError("Distance must be an odd integer >= 3")
+    if not isinstance(n_trials, int) or n_trials < 1:
+        raise ValueError("Number of trials must be a positive integer")
     random.seed(seed)
     
     # Test multiple physical error rates
@@ -450,3 +467,66 @@ def code_properties(distance: int) -> dict:
         'overhead': n_data,
         'threshold_estimate': 0.01,  # ~1% for surface codes
     }
+
+
+# ─── Frontier Domain Engine (Agent System Integration) ──────────────────────
+
+class FrontierDomainEngine:
+    """
+    Evaluation engine for agent-system payload processing.
+    Provides threshold-based analysis of domain metrics.
+    """
+
+    # Threshold constants for surface code quality metrics
+    PRIMARY_THRESHOLD = 25.0
+    PRIMARY_CRITICAL_THRESHOLD = 50.0
+    SECONDARY_THRESHOLD = 12.0
+    SECONDARY_CRITICAL_THRESHOLD = 20.0
+
+    @classmethod
+    def evaluate_primary_parameter(cls, value: float) -> Optional[Dict[str, str]]:
+        """Evaluate primary metric against surface code thresholds."""
+        if value > cls.PRIMARY_CRITICAL_THRESHOLD:
+            return {
+                "summary": "Critical primary parameter exceeded",
+                "details": f"Primary metric ({value:.2f}) exceeds critical threshold ({cls.PRIMARY_CRITICAL_THRESHOLD:.2f})",
+                "remediation": "Immediate review required: check physical error rates and decoder configuration.",
+            }
+        elif value > cls.PRIMARY_THRESHOLD:
+            return {
+                "summary": "Elevated primary parameter detected",
+                "details": f"Primary metric ({value:.2f}) exceeds reference bound ({cls.PRIMARY_THRESHOLD:.2f})",
+                "remediation": "Review surface code distance and stabilizer measurement protocols.",
+            }
+        return None
+
+    @classmethod
+    def evaluate_secondary_kinetics(cls, value: float, is_critical: bool) -> Optional[Dict[str, str]]:
+        """Evaluate secondary kinetics metric."""
+        if is_critical or value > cls.SECONDARY_CRITICAL_THRESHOLD:
+            return {
+                "summary": "Critical secondary kinetics threshold breached",
+                "details": f"Secondary metric ({value:.2f}) with critical flag={is_critical} requires immediate intervention.",
+                "remediation": "Execute emergency error correction cycle and recalibrate decoder weights.",
+            }
+        elif value > cls.SECONDARY_THRESHOLD:
+            return {
+                "summary": "Elevated secondary kinetics detected",
+                "details": f"Secondary metric ({value:.2f}) exceeds normal operating range ({cls.SECONDARY_THRESHOLD:.2f}).",
+                "remediation": "Increase monitoring frequency and verify syndrome extraction integrity.",
+            }
+        return None
+
+    @classmethod
+    def audit_specification_conformance(cls, status_descriptor: str, attributes: Dict[str, Any]) -> Optional[Dict[str, str]]:
+        """Audit status descriptor for specification conformance."""
+        desc_upper = str(status_descriptor).upper()
+        anomaly_keywords = {"DISCORDANT", "ANOMALY", "MUTANT", "VIOLATION", "FAIL", "REJECT", "DEVIATION"}
+
+        if any(keyword in desc_upper for keyword in anomaly_keywords):
+            return {
+                "summary": "Specification conformance anomaly detected",
+                "details": f"Status descriptor '{status_descriptor}' indicates deviation from fault-tolerant specifications.",
+                "remediation": "Re-evaluate syndrome extraction and verify code distance parameters.",
+            }
+        return None

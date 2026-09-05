@@ -17,7 +17,20 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+web = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
+dev = [
+    "pytest>=7.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
 
 [project.scripts]
 quantum-error-correction-surface-code = "surface_code_qec.cli:main"
@@ -25,3 +38,6 @@ quantum-error-correction-surface-code = "surface_code_qec.cli:main"
 [project.urls]
 Homepage = "https://github.com/abusuraihsakhri/quantum-error-correction-surface-code"
 Repository = "https://github.com/abusuraihsakhri/quantum-error-correction-surface-code.git"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
