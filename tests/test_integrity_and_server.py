@@ -31,6 +31,9 @@ def test_server_qec_routes():
     cycle = client.post("/api/qec/cycle", json={"distance": 3, "error_rate": 0, "seed": 42})
     assert cycle.status_code == 200
     assert cycle.json()["residual_syndrome_weight"] == 0
+    rare = client.post("/api/qec/rate", json={"distance": 3, "error_rate": 0.001, "trials": 5, "seed": 42})
+    assert rare.status_code == 200
+    assert rare.json()["logical_error_rate"] == 0.0
     invalid = client.post("/api/qec/cycle", json={"distance": 4, "error_rate": 0.1})
     assert invalid.status_code in (400, 422)
     assert client.get("/").status_code == 200
