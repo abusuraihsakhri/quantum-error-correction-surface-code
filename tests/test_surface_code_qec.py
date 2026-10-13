@@ -372,3 +372,13 @@ def test_rates_validate_inputs_and_seed():
         with pytest.raises(ValueError):
             error_correction_cycle(3, invalid)
     assert calculate_logical_error_rate(3, 0.13, 30, seed=93) == calculate_logical_error_rate(3, 0.13, 30, seed=93)
+
+def test_logical_operator_error_types():
+    lattice = SurfaceCodeLattice(3)
+    no_correction = [0] * lattice.n_data
+    logical_x = [int(i in lattice.logical_x) for i in range(lattice.n_data)]
+    logical_z = [2 if i in lattice.logical_z else 0 for i in range(lattice.n_data)]
+    assert check_logical_error(logical_x, no_correction, lattice.logical_z, "Z")
+    assert not check_logical_error(logical_x, no_correction, lattice.logical_x, "X")
+    assert check_logical_error(logical_z, no_correction, lattice.logical_x, "X")
+    assert not check_logical_error(logical_z, no_correction, lattice.logical_z, "Z")
