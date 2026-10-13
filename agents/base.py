@@ -7,6 +7,7 @@ import re
 import json
 import time
 import hmac
+import secrets
 import hashlib
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
@@ -57,8 +58,6 @@ class PHIGuard:
 class AuditTrail:
     """Cryptographic Tamper-Evident HMAC-SHA256 Audit Trail."""
 
-    DEFAULT_DEV_KEY = "DEV-KEY-CHANGE-IN-PRODUCTION"
-
     def __init__(self, secret_key: Optional[str] = None):
         resolved_key = secret_key or os.getenv("AUDIT_SECRET_KEY")
         if not resolved_key:
@@ -69,7 +68,7 @@ class AuditTrail:
                 RuntimeWarning,
                 stacklevel=2,
             )
-            resolved_key = self.DEFAULT_DEV_KEY
+            resolved_key = secrets.token_hex(32)
         self.secret_key = resolved_key.encode("utf-8")
         self.logs: List[Dict[str, Any]] = []
 
@@ -96,9 +95,20 @@ class AuditTrail:
         return entry
 
     def verify_integrity(self) -> bool:
-        for i, entry in enumerate(self.logs):
-            prev = self.logs[i-1]["current_hash"] if i > 0 else "GENESIS_BLOCK_0000000000000000"
-            if entry["prev_hash"] != prev:
+        expected_previous = "GENESIS_BLOCK_0000000000000000"
+        for entry in self.logs:
+            try:
+                if not hmac.compare_digest(entry["prev_hash"], expected_previous):
+                    return False
+                payload = (f'{entry["audit_id"]}|{entry["timestamp"]}|{entry["actor"]}|'
+                           f'{entry["actor_tier"]}|{entry["event_type"]}|'
+                           f'{entry["payload_hash"]}|{entry["prev_hash"]}')
+                expected = hmac.new(self.secret_key, payload.encode("utf-8"),
+                                    hashlib.sha256).hexdigest()
+                if not hmac.compare_digest(entry["current_hash"], expected):
+                    return False
+                expected_previous = expected
+            except (KeyError, TypeError, ValueError):
                 return False
         return True
 
