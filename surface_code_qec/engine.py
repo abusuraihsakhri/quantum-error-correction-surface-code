@@ -3,11 +3,11 @@ Surface Code Quantum Error Correction Engine
 Real implementation using Python stdlib only.
 
 Surface Code (Kitaev, 1997; Dennis et al., 2002):
-- 2D lattice of data qubits and syndrome (ancilla) qubits
+- 2D data-qubit lattice with abstract stabilizer parity checks
 - X-stabilizers detect Z (phase-flip) errors
 - Z-stabilizers detect X (bit-flip) errors
 - Code distance d: corrects up to (d-1)/2 errors
-- Threshold error rate: ~1% for independent depolarizing noise
+- No physical threshold can be inferred from a single code distance
 
 Lattice structure (distance d):
 - d² data qubits at grid vertices
@@ -17,7 +17,7 @@ Lattice structure (distance d):
 Syndrome extraction:
 1. Apply noise to data qubits
 2. Measure stabilizers to get syndrome
-3. Decode syndrome using minimum weight perfect matching (simplified)
+3. Decode using shortest paths and exact bounded-size matching or greedy approximation
 4. Apply correction
 5. Check if logical error occurred
 """
