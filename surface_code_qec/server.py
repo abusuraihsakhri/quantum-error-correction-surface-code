@@ -33,12 +33,12 @@ def create_app():
             attributes: Dict[str, Any] = {}
 
         class SimulationRequest(BaseModel):
-            distance: int = Field(default=3, ge=3, le=21)
+            distance: int = Field(default=3, ge=3, le=11)
             error_rate: float = Field(default=0.01, ge=0, le=1, allow_inf_nan=False)
             seed: int = 42
 
         class RateRequest(SimulationRequest):
-            trials: int = Field(default=100, ge=1, le=100000)
+            trials: int = Field(default=100, ge=1, le=1000)
 
         class ChatRequest(BaseModel):
             query: str
@@ -74,12 +74,14 @@ def create_app():
         def qec_rate(req: RateRequest):
             if req.distance % 2 == 0:
                 raise HTTPException(status_code=422, detail="Distance must be odd")
+            if req.trials * req.distance * req.distance > 25000:
+                raise HTTPException(status_code=422, detail="Requested computation exceeds server workload limit")
             return calculate_logical_error_rate(req.distance, req.error_rate, req.trials, req.seed)
 
         @app.get("/api/qec/properties/{distance}")
         def qec_properties(distance: int):
-            if distance < 3 or distance > 21 or distance % 2 == 0:
-                raise HTTPException(status_code=422, detail="Distance must be odd and between 3 and 21")
+            if distance < 3 or distance > 11 or distance % 2 == 0:
+                raise HTTPException(status_code=422, detail="Distance must be odd and between 3 and 11")
             return code_properties(distance)
 
         # Keep the browser UI usable when served from the Python backend.
