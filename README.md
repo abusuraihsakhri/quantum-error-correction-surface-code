@@ -1,188 +1,75 @@
-# Quantum Error Correction Surface Code
+# Quantum Error Correction — Rotated Surface Code
 
-> **Domain:** Quantum Computing & Error Correction
-> **Reference:** Surface Code (Kitaev, 1997; Dennis et al., 2002)
+Python simulation of a planar rotated surface code with independent depolarizing **data-qubit** noise, ideal stabilizer measurements, and a syndrome-graph decoder. Includes a command-line interface, an in-browser application, a local FastAPI service, and a separate legacy rule-based audit subsystem.
 
-<div align="center">
+## Browser application
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB.svg?logo=python&logoColor=white)
+The static application lives in `web/` and runs the **same Python simulation engine** inside the browser through Pyodide. GitHub Pages deployment is configured through `.github/workflows/pages.yml`; availability depends on successful GitHub Pages deployment.
 
-</div>
+Select a code distance, physical error probability, and seed, then run a single correction cycle or Monte Carlo logical-error-rate study. Results are calculated locally; they are not fabricated or fetched from a hosted API.
 
----
+**Privacy:** Input parameters and simulation outputs are processed in your browser. The Pyodide runtime is downloaded from jsDelivr on first use. The Python API and audit subsystem, when used separately, run on the server and may retain data in process memory.
 
-## Overview
+## Scientific scope and limitations
 
-Surface Code Quantum Error Correction — a real QEC simulation engine implementing rotated surface codes with depolarizing noise models, syndrome extraction, and minimum weight perfect matching (MWPM) decoding.
+- Rotated planar `[[d², 1, d]]` construction: `d²` data qubits and `(d²−1)/2` checks of each Pauli type, including weight-two boundary checks.
+- Independent depolarizing channel: on each data qubit, `I` with probability `1−p`, and each of `X`, `Y`, `Z` with probability `p/3`.
+- Syndrome extraction assumes **perfect, noiseless stabilizer measurements**. Repeated rounds, faulty gates, correlated noise, leakage, and space-time matching are **not** modeled.
+- Decoder uses shortest paths in the syndrome graph, exact defect/boundary minimum-weight matching for at most **18 defects per syndrome type**, and an explicitly identified greedy approximation for larger syndromes. It is **not a Blossom implementation**.
+- The Monte Carlo logical-error rate is a sampled failure fraction for this idealized error model. A single-distance scan **cannot estimate a surface-code threshold**. A threshold study requires code-distance crossings and uncertainty quantification.
 
-This project provides:
-- **Core QEC Engine**: Surface code lattice construction, noise simulation, and error correction cycles
-- **CLI Interface**: Command-line tools for running simulations and analyzing code properties
-- **Agent System**: Multi-agent coordination with PHI guarding and HMAC-SHA256 audit trails
-- **FastAPI Server**: REST API for remote QEC operations
-
----
+Use the reported logical rates as illustrative numerical results rather than hardware-performance predictions.
 
 ## Installation
 
+Python 3.9 or later:
+
 ```bash
-# Clone the repository
 git clone https://github.com/abusuraihsakhri/quantum-error-correction-surface-code.git
 cd quantum-error-correction-surface-code
-
-# Install core dependencies
-pip install -e .
-
-# Install with web server support
-pip install -e ".[web]"
-
-# Install with development dependencies
-pip install -e ".[dev]"
+python -m pip install -e ".[dev]"
+python -m pytest -q
 ```
 
----
+The simulation engine itself uses Python's standard library. Pydantic supports the separate agent interface; FastAPI and Uvicorn are optional server dependencies.
 
-## Usage
-
-### QEC Simulation CLI
+## CLI
 
 ```bash
-# Run a single error correction cycle
-python cli.py run -d 3 -p 0.01 --seed 42
-
-# Calculate logical error rate
-python cli.py logical-rate -d 3 -p 0.01 --trials 1000
-
-# Estimate threshold error rate
-python cli.py threshold -d 3 --trials 500
-
-# Show code properties
-python cli.py properties -d 5
-
-# Compare different code distances
-python cli.py compare --max-distance 11
+quantum-error-correction-surface-code run -d 3 -p 0.01 --seed 42
+quantum-error-correction-surface-code logical-rate -d 5 -p 0.01 --trials 200 --seed 42
+quantum-error-correction-surface-code properties -d 7
+quantum-error-correction-surface-code compare --max-distance 9
+quantum-error-correction-surface-code threshold -d 3 --trials 100
 ```
 
-### Agent System CLI
+The `threshold` command prints a fixed-distance suppression scan; **no threshold estimate** is returned. For agent and audit features, use `quantum-qec-audit --help` or `python -m surface_code_qec.cli --help`.
+
+## Local web application and API
 
 ```bash
-# Run a single audit task
-python -m surface_code_qec.cli audit --task-id TASK-001 --primary 29.4
-
-# Chat with the supervisor
-python -m surface_code_qec.cli chat "What is the system status?"
-
-# Verify audit trail integrity
-python -m surface_code_qec.cli verify-audit
-
-# Batch process CSV records
-python -m surface_code_qec.cli batch -i sample.csv -o results.csv
-
-# Launch FastAPI server
+python -m pip install -e ".[web]"
 python -m surface_code_qec.cli serve --host 127.0.0.1 --port 8000
 ```
 
-### FastAPI REST API
+Open `http://127.0.0.1:8000/` for the browser interface. The server exposes `GET /health`, `GET /api/qec/properties/{distance}`, `POST /api/qec/cycle`, and `POST /api/qec/rate`. The legacy agent audit endpoints `POST /api/audit` and `POST /api/chat` remain available.
+
+Example:
 
 ```bash
-# Start the server
-python -m surface_code_qec.cli serve
-
-# Check health
-curl http://localhost:8000/health
-
-# Process a task
-curl -X POST http://localhost:8000/api/audit \
-  -H "Content-Type: application/json" \
-  -d '{"task_id": "TASK-001", "primary_metric": 29.4, "is_critical_flag": true}'
+curl -X POST http://127.0.0.1:8000/api/qec/cycle \
+  -H 'Content-Type: application/json' \
+  -d '{"distance":3,"error_rate":0.01,"seed":42}'
 ```
 
----
+Docker users can build with `docker build -t surface-qec .` and run with `docker run --rm -p 8000:8000 surface-qec`. Docker Compose requires the `AUDIT_SECRET_KEY` environment variable; generate it with `python -c "import secrets; print(secrets.token_hex(32))"`. The HMAC ledger is process-local, not a persistent audit storage service.
 
-## Testing
+## Testing and deployment
 
-```bash
-# Run all tests
-pytest -v
+`python -m pytest -q` tests stabilizer commutation, single-qubit correction, random syndrome clearance, deterministic simulation, API routes, and audit HMAC tampering. GitHub Actions tests Python 3.9–3.12, checks Python compilation and JavaScript syntax, and publishes static Pages assets on pushes to `master` when Pages is configured for GitHub Actions.
 
-# Run with coverage
-pytest -v --cov=surface_code_qec --cov=agents
-```
-
----
-
-## Project Structure
-
-```
-quantum-error-correction-surface-code/
-├── surface_code_qec/          # Core QEC package
-│   ├── engine.py              # Surface code engine & agent integration
-│   ├── models.py              # Data models & telemetry definitions
-│   ├── agents.py              # Multi-agent coordination system
-│   ├── cli.py                 # Package CLI interface
-│   └── server.py              # FastAPI REST server
-├── agents/                    # Enterprise agent system
-│   ├── base.py                # PHI guard, audit trail, security
-│   ├── models.py              # Pydantic schemas
-│   ├── workers.py             # Domain worker agents
-│   ├── supervisor.py          # Supervisor orchestrator
-│   ├── api.py                 # FastAPI application
-│   ├── metrics.py             # Prometheus metrics
-│   ├── learning.py            # Active learning engine
-│   ├── llm_factory.py         # LLM provider factory
-│   └── streamer.py            # WebSocket telemetry
-├── cli.py                     # QEC simulation CLI entry point
-├── tests/                     # Test suite
-│   ├── test_surface_code_qec.py
-│   ├── test_quantum_error_correction_surface_code.py
-│   └── test_enrichment.py
-├── web/index.html             # Operations console UI
-├── enrichment.py              # Enrichment feature modules
-├── pyproject.toml             # Project configuration
-├── Dockerfile                 # Container build
-└── docker-compose.yml         # Container deployment
-```
-
----
-
-## Surface Code Parameters
-
-| Parameter | Description |
-|:----------|:------------|
-| `distance` | Code distance (odd integer, >= 3) |
-| `error_rate` | Physical error rate (0.0 to 1.0) |
-| `trials` | Number of simulation trials |
-| `seed` | Random seed for reproducibility |
-
----
-
-## Security
-
-- **Audit Trail**: HMAC-SHA256 tamper-evident logging for all operations
-- **PHI Guard**: Zero-PHI outbound interceptor blocking sensitive identifiers
-- **Input Validation**: Bounds checking on all simulation parameters
-
-Set `AUDIT_SECRET_KEY` environment variable in production:
-```bash
-export AUDIT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
-```
-
----
-
-## Docker Deployment
-
-```bash
-# Build and run
-docker-compose up --build
-
-# Or manually
-docker build -t quantum-error-correction-surface-code .
-docker run -p 8000:8000 quantum-error-correction-surface-code
-```
-
----
+For the standalone static site, `index.html`, `worker.js`, and `engine.py` must be served together from the same directory. Browser support requires modern Web Worker support and network access to the Pyodide CDN for the first load. The worker performs calculations off the UI thread.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
