@@ -11,7 +11,11 @@ coordinator = SurfaceCodeCoordinator()
 def create_app():
     try:
         from fastapi import FastAPI
-        from pydantic import BaseModel
+        from pydantic import BaseModel, Field
+        from pathlib import Path
+        from fastapi.responses import FileResponse
+        from fastapi.staticfiles import StaticFiles
+        from .engine import error_correction_cycle, calculate_logical_error_rate, code_properties
 
         app = FastAPI(
             title="Surface Code Quantum Error Correction & Minimum Weight Matching Agent",
@@ -27,6 +31,14 @@ def create_app():
             status_descriptor: str = "DISCORDANT_ANOMALY"
             is_critical_flag: bool = True
             attributes: Dict[str, Any] = {}
+
+        class SimulationRequest(BaseModel):
+            distance: int = Field(default=3, ge=3, le=21)
+            error_rate: float = Field(default=0.01, ge=0, le=1, allow_inf_nan=False)
+            seed: int = 42
+
+        class RateRequest(SimulationRequest):
+            trials: int = Field(default=100, ge=1, le=100000)
 
         class ChatRequest(BaseModel):
             query: str
@@ -51,6 +63,27 @@ def create_app():
         @app.post("/api/chat")
         def api_chat(req: ChatRequest):
             return {"response": coordinator.query_supervisory_chat(req.query)}
+
+        @app.post("/api/qec/cycle")
+        def qec_cycle(req: SimulationRequest):
+            return error_correction_cycle(req.distance, req.error_rate, seed=req.seed)
+
+        @app.post("/api/qec/rate")
+        def qec_rate(req: RateRequest):
+            return calculate_logical_error_rate(req.distance, req.error_rate, req.trials, req.seed)
+
+        @app.get("/api/qec/properties/{distance}")
+        def qec_properties(distance: int):
+            return code_properties(distance)
+
+        # Keep the browser UI usable when served from the Python backend.
+        frontend = Path(__file__).resolve().parent.parent / "web"
+        if frontend.is_dir():
+            @app.get("/engine.py")
+            def browser_engine():
+                return FileResponse(Path(__file__).with_name("engine.py"), media_type="text/plain")
+
+            app.mount("/", StaticFiles(directory=str(frontend), html=True), name="frontend")
 
         return app
     except ImportError:
