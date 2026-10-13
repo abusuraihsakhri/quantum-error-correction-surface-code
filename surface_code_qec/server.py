@@ -10,7 +10,7 @@ coordinator = SurfaceCodeCoordinator()
 
 def create_app():
     try:
-        from fastapi import FastAPI
+        from fastapi import FastAPI, HTTPException
         from pydantic import BaseModel, Field
         from pathlib import Path
         from fastapi.responses import FileResponse
@@ -74,6 +74,8 @@ def create_app():
 
         @app.get("/api/qec/properties/{distance}")
         def qec_properties(distance: int):
+            if distance < 3 or distance > 21 or distance % 2 == 0:
+                raise HTTPException(status_code=422, detail="Distance must be odd and between 3 and 21")
             return code_properties(distance)
 
         # Keep the browser UI usable when served from the Python backend.
