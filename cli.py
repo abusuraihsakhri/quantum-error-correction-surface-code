@@ -48,8 +48,8 @@ def cmd_logical_rate(args):
     print(f"  Logical error rate:    {result['logical_error_rate']:.6f}")
     print(f"  Logical X error rate:  {result['logical_x_error_rate']:.6f}")
     print(f"  Logical Z error rate:  {result['logical_z_error_rate']:.6f}")
-    print(f"  Below threshold:       {result['below_threshold']}")
-    print(f"  Suppression factor:    {result['suppression_factor']:.2f}x")
+    print(f"  Logical below physical:{result['below_threshold']}")
+    print(f"  Suppression factor:    {result['suppression_factor']:.2f}x" if result['suppression_factor'] != float("inf") else "  Suppression factor:    undefined (zero observed failures)")
     return 0
 
 
@@ -61,8 +61,8 @@ def cmd_threshold(args):
     
     print(f"Threshold Estimation (d={result['distance']}):")
     print(f"  Trials per rate:       {result['n_trials_per_rate']}")
-    print(f"  Estimated threshold:   {result['estimated_threshold']:.4f}")
-    print(f"\n  {'Physical Rate':>15s} {'Logical Rate':>15s} {'Below Threshold':>15s}")
+    print("  Estimated threshold:   undetermined (requires multiple distances)")
+    print(f"\n  {'Physical Rate':>15s} {'Logical Rate':>15s} {'Logical < Physical':>15s}")
     print(f"  {'-'*45}")
     for r in result['results']:
         below = "✓" if r['below_threshold'] else "✗"
