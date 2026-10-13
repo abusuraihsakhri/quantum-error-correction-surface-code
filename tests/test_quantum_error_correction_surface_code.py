@@ -63,3 +63,22 @@ def test_supervisor_consensus_and_audit():
     assert main(["audit", "--task-id", "CLI-TEST-01"]) == 0
     assert main(["chat", "Explain", "specifications"]) == 0
     assert main(["verify-audit"]) == 0
+
+def test_csv_batch_boolean_parsing(tmp_path):
+    import csv
+    data = tmp_path / "tasks.csv"
+    output = tmp_path / "output.csv"
+    with data.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(stream, fieldnames=[
+            "task_id", "target_identifier", "primary_metric", "secondary_metric",
+            "status_descriptor", "is_critical_flag"])
+        writer.writeheader()
+        for task_id, flag in (("TASK-FALSE", "False"), ("TASK-TRUE", "true")):
+            writer.writerow(dict(task_id=task_id, target_identifier="KEY-01",
+                                 primary_metric=1, secondary_metric=1,
+                                 status_descriptor="NOMINAL", is_critical_flag=flag))
+    assert main(["batch", "-i", str(data), "-o", str(output)]) == 0
+    with output.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    assert rows[0]["overall_status"] == "NOMINAL_OPTIMAL"
+    assert rows[1]["overall_status"] == "CRITICAL_INTERVENTION_REQUIRED"
