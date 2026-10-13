@@ -48,8 +48,9 @@ def cmd_logical_rate(args):
     print(f"  Logical error rate:    {result['logical_error_rate']:.6f}")
     print(f"  Logical X error rate:  {result['logical_x_error_rate']:.6f}")
     print(f"  Logical Z error rate:  {result['logical_z_error_rate']:.6f}")
-    print(f"  Below threshold:       {result['below_threshold']}")
-    print(f"  Suppression factor:    {result['suppression_factor']:.2f}x")
+    print(f"  Logical below physical:{result['below_threshold']}")
+    factor = result["suppression_factor"]
+    print(f"  Suppression factor:    {factor:.2f}x" if factor is not None else "  Suppression factor:    undefined (zero observed failures)")
     return 0
 
 
@@ -61,8 +62,8 @@ def cmd_threshold(args):
     
     print(f"Threshold Estimation (d={result['distance']}):")
     print(f"  Trials per rate:       {result['n_trials_per_rate']}")
-    print(f"  Estimated threshold:   {result['estimated_threshold']:.4f}")
-    print(f"\n  {'Physical Rate':>15s} {'Logical Rate':>15s} {'Below Threshold':>15s}")
+    print("  Estimated threshold:   undetermined (requires multiple distances)")
+    print(f"\n  {'Physical Rate':>15s} {'Logical Rate':>15s} {'Logical < Physical':>15s}")
     print(f"  {'-'*45}")
     for r in result['results']:
         below = "✓" if r['below_threshold'] else "✗"
@@ -80,7 +81,7 @@ def cmd_properties(args):
     print(f"  Max correctable:       {result['max_correctable_errors']} errors")
     print(f"  Code rate:             {result['code_rate']:.4f}")
     print(f"  Overhead:              {result['overhead']}x")
-    print(f"  Threshold estimate:    {result['threshold_estimate']:.2%}")
+    print("  Threshold estimate:    not determined from geometry")
     return 0
 
 
@@ -100,7 +101,7 @@ def cmd_compare(args):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="quantum-error-correction-surface-code",
-        description="Surface Code Quantum Error Correction — real QEC simulation"
+        description="Rotated surface code simulation with ideal syndrome measurements"
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

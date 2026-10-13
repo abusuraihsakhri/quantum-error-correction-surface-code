@@ -1,18 +1,8 @@
-version: '3.8'
-
 services:
   quantum-error-correction-surface-code:
     build: .
-    container_name: quantum-error-correction-surface-code
     ports:
       - "8000:8000"
     environment:
-      # Generate a secure key: python -c "import secrets; print(secrets.token_hex(32))"
-      - AUDIT_SECRET_KEY=${AUDIT_SECRET_KEY:-CHANGE_ME_GENERATE_SECURE_KEY}
-      - MODEL_PROVIDER=mock
+      AUDIT_SECRET_KEY: ${AUDIT_SECRET_KEY:?Set AUDIT_SECRET_KEY before launching}
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
