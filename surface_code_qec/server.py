@@ -19,7 +19,7 @@ def create_app():
 
         app = FastAPI(
             title="Surface Code Quantum Error Correction & Minimum Weight Matching Agent",
-            description="Decodes 2D rotated surface code syndrome measurements using Blossom minimum-weight perfect matching (MWPM) algorithms.",
+            description="Rotated planar surface-code simulator with ideal syndrome measurements and bounded-size exact defect matching.",
             version="2.0.0-FRONTIER",
         )
 
