@@ -66,10 +66,14 @@ def create_app():
 
         @app.post("/api/qec/cycle")
         def qec_cycle(req: SimulationRequest):
+            if req.distance % 2 == 0:
+                raise HTTPException(status_code=422, detail="Distance must be odd")
             return error_correction_cycle(req.distance, req.error_rate, seed=req.seed)
 
         @app.post("/api/qec/rate")
         def qec_rate(req: RateRequest):
+            if req.distance % 2 == 0:
+                raise HTTPException(status_code=422, detail="Distance must be odd")
             return calculate_logical_error_rate(req.distance, req.error_rate, req.trials, req.seed)
 
         @app.get("/api/qec/properties/{distance}")
