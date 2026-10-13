@@ -356,8 +356,9 @@ def error_correction_cycle(distance: int, error_rate: float,
     remaining_z = extract_syndrome(residual, lattice.z_stabilizers, "Z")
     if any(remaining_x) or any(remaining_z):
         raise RuntimeError("Decoder did not clear all measured syndromes")
-    logical_x = check_logical_error(errors, correction, lattice.logical_x, "X")
-    logical_z = check_logical_error(errors, correction, lattice.logical_z, "Z")
+    # A residual logical X flips logical Z; a residual logical Z flips logical X.
+    logical_x = check_logical_error(errors, correction, lattice.logical_z, "Z")
+    logical_z = check_logical_error(errors, correction, lattice.logical_x, "X")
     return {
         "distance": distance, "error_rate": error_rate,
         "n_data_qubits": lattice.n_data, "n_stabilizers": lattice.n_stabilizers,
