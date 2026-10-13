@@ -49,7 +49,8 @@ def cmd_logical_rate(args):
     print(f"  Logical X error rate:  {result['logical_x_error_rate']:.6f}")
     print(f"  Logical Z error rate:  {result['logical_z_error_rate']:.6f}")
     print(f"  Logical below physical:{result['below_threshold']}")
-    print(f"  Suppression factor:    {result['suppression_factor']:.2f}x" if result['suppression_factor'] != float("inf") else "  Suppression factor:    undefined (zero observed failures)")
+    factor = result["suppression_factor"]
+    print(f"  Suppression factor:    {factor:.2f}x" if factor is not None else "  Suppression factor:    undefined (zero observed failures)")
     return 0
 
 
