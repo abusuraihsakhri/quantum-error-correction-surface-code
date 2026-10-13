@@ -80,7 +80,7 @@ def cmd_properties(args):
     print(f"  Max correctable:       {result['max_correctable_errors']} errors")
     print(f"  Code rate:             {result['code_rate']:.4f}")
     print(f"  Overhead:              {result['overhead']}x")
-    print(f"  Threshold estimate:    {result['threshold_estimate']:.2%}")
+    print("  Threshold estimate:    not determined from geometry")
     return 0
 
 
@@ -100,7 +100,7 @@ def cmd_compare(args):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="quantum-error-correction-surface-code",
-        description="Surface Code Quantum Error Correction — real QEC simulation"
+        description="Rotated surface code simulation with ideal syndrome measurements"
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
