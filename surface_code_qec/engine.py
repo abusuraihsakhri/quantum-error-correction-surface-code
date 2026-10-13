@@ -400,8 +400,8 @@ def calculate_logical_error_rate(distance: int, error_rate: float,
         "logical_z_error_rate": z_errors / n_trials,
         "below_threshold": logical_rate < error_rate,  # legacy key; NOT a threshold measurement
         "logical_rate_below_physical": logical_rate < error_rate,
-        "suppression_factor": (error_rate / logical_rate if logical_rate else
-                               float("inf") if error_rate else 1.0),
+        "suppression_factor": (error_rate / logical_rate if logical_rate
+                               else None if error_rate else 1.0),
     }
 
 
